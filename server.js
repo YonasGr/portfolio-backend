@@ -1,29 +1,55 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fetch = require('node-fetch');
-const cors = require('cors'); // To allow requests from your static site
+const cors = require('cors');
 
 const app = express();
 app.use(bodyParser.json());
-app.use(cors());
+
+// Restrict CORS to only your frontend URL for better security
+// Replace with your actual frontend URL, e.g., 'https://yonasgr.onrender.com'
+const frontendUrl = 'https://yonasgr.onrender.com';
+const corsOptions = {
+  origin: frontendUrl,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
 // Get sensitive keys from environment variables
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
+// Validate that environment variables are set
+if (!BOT_TOKEN || !CHAT_ID) {
+    console.error('Error: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not found in environment variables.');
+    // Exit the application if essential variables are missing
+    process.exit(1);
+}
+
+// Helper function to sanitize user input for HTML
+function sanitizeInput(text) {
+    return text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 app.post('/send-message', async (req, res) => {
-    const { name, phone, email, message } = req.body;
-
-    const telegramMessage = `
-📩 <b>New Contact Form Submission</b>
-👤 <b>Name:</b> ${name}
-📞 <b>Phone:</b> ${phone || 'Not provided'}
-📧 <b>Email:</b> ${email}
-💬 <b>Message:</b>
-${message}
-    `;
-
     try {
+        const { name, phone, email, message } = req.body;
+
+        // Sanitize all user input to prevent injection
+        const sanitizedName = sanitizeInput(name);
+        const sanitizedPhone = sanitizeInput(phone);
+        const sanitizedEmail = sanitizeInput(email);
+        const sanitizedMessage = sanitizeInput(message);
+
+        const telegramMessage = `
+📩 <b>New Contact Form Submission</b>
+👤 <b>Name:</b> ${sanitizedName}
+📞 <b>Phone:</b> ${sanitizedPhone || 'Not provided'}
+📧 <b>Email:</b> ${sanitizedEmail}
+💬 <b>Message:</b>
+${sanitizedMessage}
+        `;
+
         const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: {
@@ -41,14 +67,18 @@ ${message}
         if (result.ok) {
             res.status(200).json({ success: true, message: 'Message sent successfully!' });
         } else {
+            // Log the Telegram API error for debugging
+            console.error('Telegram API Error:', result);
             res.status(500).json({ success: false, message: 'Failed to send message.' });
         }
     } catch (error) {
+        // Log the full error to the console for debugging
+        console.error('Error in /send-message route:', error);
         res.status(500).json({ success: false, message: 'An error occurred.' });
     }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT; // No need for a fallback value
 app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
 });
