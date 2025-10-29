@@ -1,19 +1,25 @@
 {
   "name": "portfolio-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Yonas Girma's personal portfolio with contact form and file upload",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "portfolio",
+    "express",
+    "telegram",
+    "contact-form"
+  ],
+  "author": "Yonas Girma",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
     "express": "^5.1.0",
     "multer": "^2.0.2",
     "form-data": "^4.0.4",
